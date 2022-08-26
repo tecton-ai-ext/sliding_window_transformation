@@ -76,7 +76,7 @@ The feature view definition would be the following:
 
 ```python
 import datetime
-from tecton.compat import const
+from tecton.compat import const, materialization_context
 
 @batch_feature_view(
     inputs={'transactions_batch': Input(transactions_batch, window='3d')},
@@ -91,19 +91,27 @@ from tecton.compat import const
     owner='user@tecton.ai',
     description='How many transactions the user has made to distinct merchants in the last 3 days.'
 )
-def user_distinct_merchant_transaction_count_3d(transactions_batch):
+def user_distinct_merchant_transaction_count_3d(transactions_batch, context=materialization_context()):
     return user_distinct_merchant_transaction_count_transformation(
         tecton_sliding_window(transactions_batch,
             timestamp_key=const('timestamp'),
-            window_size=const('3d')))
+            window_size=const('3d'), context=context))
 ```
 ## Usage
 The tecton_sliding_window() has 3 primary inputs:
 
-`df`: the input data.
+`df`: the input Spark dataframe.
 
 `timestamp_key`: the timestamp column in your input data that represents the time of the event.
 
-`window_size`(**str**): how far back in time the window should go. For example, if my feature is the number of distinct IDs in the last week, then the window size is 7 days.
+`window_size`(**str**): How long each sliding window is, as a string in the format "[QUANTITY] [UNIT]".
+            Ex: "2 days". See https://pypi.org/project/pytimeparse/ for more details. For example, if the feature is the number of distinct IDs in the last week, then the window size is 7 days.
+
+`context`: Tecton materialization context.
+
+`slide_interval`(**Optional**): How often window is produced, as a string in the format "[QUANTITY] [UNIT]".
+            Ex: "2 days". See https://pypi.org/project/pytimeparse/ for more details.
+            Note this must be less than or equal to window_size, and window_size must be a multiple of slide_interval.
+            If not provided, this defaults to the batch schedule of the FeatureView.
 
 `window_column_name`(**Optional**): name of added column with the exploded window ends. Default: `window_end`
