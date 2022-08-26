@@ -4,14 +4,11 @@
 of historical data for custom time-windowed aggregations in a single job.
 
 >Warning:
->As of 0.4, it is deprecated and no longer managed by Tecton.
-
->Note:
->In newer
+>As of 0.4, it is deprecated and no longer managed by Tecton. In newer
 versions of the Tecton SDK, you can use [incremental backfills](https://docs.tecton.ai/latest/overviews/framework/feature_views/batch/incremental_backfills.html)
 
 In steady-state Tecton runs jobs periodically based on the `batch_schedule` defined in your feature views. Prior to 0.4, historical
-data could only be backfilled multiple `batch_schedule` periods at a time, which would cause issues with time-windowed aggregations.  To ensure they are backfilled
+data could only be backfilled multiple `batch_schedule` periods at a time, which would cause issues with time-windowed aggregations. To ensure they are backfilled
 correctly, you could use `tecton_sliding_window` to duplicate each data point for each window it is included in, and then group by windows to do 
 custom aggregations.
 
