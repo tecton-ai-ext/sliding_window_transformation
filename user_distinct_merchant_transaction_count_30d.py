@@ -1,8 +1,8 @@
-from transformations.tecton_sliding_window import tecton_sliding_window
+from sliding_window_transformation import sliding_window_transformation
 from datetime import timedelta
 from tecton import batch_feature_view, FilteredSource, transformation, const, materialization_context
-from fraud.entities import user
-from fraud.data_source import transactions_batch
+from entities import user
+from data_source import transactions_batch
 from datetime import datetime
 
 # Counts distinct merchant names for each user and window. The timestamp
@@ -41,7 +41,8 @@ def user_distinct_merchant_transaction_count_30d(transactions_batch, context=mat
     return user_distinct_merchant_transaction_count_transformation(
         # Use tecton_sliding_transformation to create trailing 30 day time windows.
         # The slide_interval defaults to the batch_schedule (1 day).
-        tecton_sliding_window(transactions_batch,
+        sliding_window_transformation(transactions_batch,
             timestamp_key=const('timestamp'),
             window_size=const('30d'),
+            start_time=context.start_time,
             context=context))

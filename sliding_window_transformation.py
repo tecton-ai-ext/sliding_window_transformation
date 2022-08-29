@@ -7,10 +7,11 @@ from tecton import transformation
 
 
 @transformation(mode="pyspark")
-def tecton_sliding_window(
+def sliding_window_transformation(
         df,
         timestamp_key: str,
         window_size: str,
+        start_time,
         context,
         slide_interval: str = None,
         window_column_name="window_end",
@@ -20,7 +21,8 @@ def tecton_sliding_window(
         :param timestamp_key: The name of the timestamp columns for the event times in `df`
         :param window_size: How long each sliding window is, as a string in the format "[QUANTITY] [UNIT]".
             Ex: "2 days". See https://pypi.org/project/pytimeparse/ for more details.
-        :param context: Tecton materialization context which provides start_time, end_time, and slide_interval
+        :param context: Tecton materialization context which provides start_time, end_time, and sets default slide_interval
+            to the feature view batch_schedule
         :param slide_interval: [optional] How often window is produced, as a string in the format "[QUANTITY] [UNIT]".
             Ex: "2 days". See https://pypi.org/project/pytimeparse/ for more details.
             Note this must be less than or equal to window_size, and window_size must be a multiple of slide_interval.
@@ -28,7 +30,7 @@ def tecton_sliding_window(
         :param window_column_name: [optional] The output column name for the timestamp of the end of each window
         :return: An exploded Spark DataFrame with an added column according to window_column_name.
         Ex:
-            tecton_sliding_window(
+            sliding_window_transformation(
                 [
                     (user_id=1, timestamp = '2021-01-10 10:14:14'),
                     (user_id=2, timestamp = '2021-01-11 23:10:10'),
@@ -109,7 +111,7 @@ def tecton_sliding_window(
 
 
     @F.udf(returnType=ArrayType(TimestampType()))
-    def tecton_sliding_window(
+    def sliding_window_transformation(
             timestamp: datetime.datetime,
             window_size: str,
             slide_interval: str,
@@ -140,7 +142,7 @@ def tecton_sliding_window(
     return df.withColumn(
         window_column_name,
         F.explode(
-            tecton_sliding_window(
+            sliding_window_transformation(
                 F.col(timestamp_key),
                 F.lit(window_size),
                 F.lit(slide_interval),
