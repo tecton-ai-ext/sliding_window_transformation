@@ -71,7 +71,7 @@ def sliding_window_transformation(
         return datetime.timedelta(seconds=pytimeparse.parse(duration))
 
 
-    def align_time_downwards(time: datetime.datetime, alignment: datetime.timedelta) -> datetime.datetime:
+    def _align_time_downwards(time: datetime.datetime, alignment: datetime.timedelta) -> datetime.datetime:
         excess_seconds = time.timestamp() % alignment.total_seconds()
         return datetime.datetime.utcfromtimestamp(time.timestamp() - excess_seconds)
 
@@ -108,7 +108,7 @@ def sliding_window_transformation(
 
 
     @F.udf(returnType=ArrayType(TimestampType()))
-    def sliding_window_transformation(
+    def sliding_window_udf(
             timestamp: datetime.datetime,
             window_size: str,
             slide_interval: str,
@@ -118,8 +118,8 @@ def sliding_window_transformation(
         window_size_td = _parse_time(window_size, allow_unbounded=True)
         slide_interval_td = _parse_time(slide_interval, allow_unbounded=False)
 
-        aligned_feature_start = align_time_downwards(feature_start, slide_interval_td)
-        earliest_possible_window_start = align_time_downwards(timestamp, slide_interval_td)
+        aligned_feature_start = _align_time_downwards(feature_start, slide_interval_td)
+        earliest_possible_window_start = _align_time_downwards(timestamp, slide_interval_td)
         window_end_cursor = max(aligned_feature_start, earliest_possible_window_start) + slide_interval_td
 
         windows = []
@@ -139,7 +139,7 @@ def sliding_window_transformation(
     return df.withColumn(
         window_column_name,
         F.explode(
-            sliding_window_transformation(
+            sliding_window_udf(
                 F.col(timestamp_key),
                 F.lit(window_size),
                 F.lit(slide_interval),

@@ -32,9 +32,8 @@ def user_distinct_merchant_transaction_count_transformation(window_input_df):
     offline=True,
     feature_start_time=datetime(2021, 4, 1),
     tags={'release': 'production'},
-    owner='matt@tecton.ai',
+    owner='user@tecton.ai',
     description='How many transactions the user has made to distinct merchants in the last 30 days.',
-    alert_email="derek@tecton.ai",
     monitor_freshness=True
 )
 def user_distinct_merchant_transaction_count_30d(transactions_batch, context=materialization_context()):

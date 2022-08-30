@@ -25,19 +25,24 @@ Given a series of transactions, we want a list of merchants visited over the las
 After running this data through `tecton_sliding_window` each data point is repeated (`window_size`/`slide_interval`) times
 with each window_end that the data point would be included in.
 
-| Timestamp  |  user_id | merchant_id | window_end |
+| Timestamp  | user_id | merchant_id | window_end |
 |------------|---------|-------------|------------|
 | 2021-05-01 | 1       | a           | 2021-05-01 |
+|||||
 | 2021-05-01 | 1       | a           | 2021-05-02 |
 | 2021-05-02 | 1       | b           | 2021-05-02 |
+|||||
 | 2021-05-01 | 1       | a           | 2021-05-03 |
 | 2021-05-02 | 1       | b           | 2021-05-03 |
 | 2021-05-03 | 1       | c           | 2021-05-03 |
+|||||
 | 2021-05-02 | 1       | b           | 2021-05-04 |
 | 2021-05-03 | 1       | c           | 2021-05-04 |
 | 2021-05-04 | 1       | d           | 2021-05-04 |
+|||||
 | 2021-05-03 | 1       | c           | 2021-05-05 |
 | 2021-05-04 | 1       | d           | 2021-05-05 |
+|||||
 | 2021-05-04 | 1       | d           | 2021-05-06 |
 
 The output of tecton_sliding_window can now be grouped by window_end, to get the desired window aggregation. If we want a list
@@ -45,7 +50,7 @@ of merchants, we can use the transformation below on the output of  `tecton_slid
 
 ```python
 @transformation(mode='spark_sql')
-def user_distinct_merchant_transaction_count_transformation(window_input_df):
+def user_merchant_list_transformation(window_input_df):
     return f'''
         SELECT
             user_id,
@@ -73,24 +78,24 @@ The final output dataframe is:
 The feature view definition would be the following:
 
 ```python
-import datetime
+from datetime import timedelta
 from tecton import const
 
 @batch_feature_view(
-    inputs={'transactions_batch': Input(transactions_batch, window='3d')},
+    sources=[FilteredSource(transactions_batch, start_time_offset=timedelta(days=-2))],
     entities=[user],
     mode='pipeline',
-    ttl='1d',
-    batch_schedule='1d',
+    ttl=timedelta(days=1),
+    batch_schedule=timedelta(days=1),
     online=True,
     offline=True,
     feature_start_time=datetime(2021, 4, 1),
-    tags={'release': 'production'},
-    owner='user@tecton.ai',
-    description='How many transactions the user has made to distinct merchants in the last 3 days.'
+    description='List of merchants user visited in the last 3 days.'
 )
-def user_distinct_merchant_transaction_count_3d(transactions_batch):
-    return user_distinct_merchant_transaction_count_transformation(
+def user_merchant_list_3d(transactions_batch, context=materialization_context()):
+    return user_merchant_list_transformation(
+        # Use tecton_sliding_transformation to create trailing 30 day time windows.
+        # The slide_interval defaults to the batch_schedule (1 day).
         sliding_window_transformation(transactions_batch,
             timestamp_key=const('timestamp'),
             window_size=const('3d')))
@@ -102,7 +107,7 @@ The tecton_sliding_window() has 3 primary inputs:
 
 `timestamp_key`: the timestamp column in your input data that represents the time of the event.
 
-`window_size`(**str**): The time period for the sliding window. For example, if the feature is the number of distinct values in the last week, then the window size is 7 days. Format window_size as "[QUANTITY] [UNIT]".
+`window_size`(**str**): The time period for the sliding window. To include all data up to current time, set to `unbounded_preceding`. For example, if the feature is the number of distinct values in the last week, then the window size is 7 days. Format window_size as "[QUANTITY] [UNIT]".
             Ex: "2 days". See https://pypi.org/project/pytimeparse/ for more details.
 
 `slide_interval`(**Optional**): How often window is produced, as a string in the format "[QUANTITY] [UNIT]".
