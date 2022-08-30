@@ -20,8 +20,6 @@ def sliding_window_transformation(
         :param timestamp_key: The name of the timestamp columns for the event times in `df`
         :param window_size: How long each sliding window is, as a string in the format "[QUANTITY] [UNIT]".
             Ex: "2 days". See https://pypi.org/project/pytimeparse/ for more details.
-        :param context:[optional] Tecton materialization context which provides start_time, end_time, and sets default slide_interval
-            to the feature view batch_schedule
         :param slide_interval: [optional] How often window is produced, as a string in the format "[QUANTITY] [UNIT]".
             Ex: "2 days". See https://pypi.org/project/pytimeparse/ for more details.
             Note this must be less than or equal to window_size, and window_size must be a multiple of slide_interval.
