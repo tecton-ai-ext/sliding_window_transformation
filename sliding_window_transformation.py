@@ -3,7 +3,7 @@ import datetime
 from pyspark.sql.types import ArrayType
 from pyspark.sql.types import TimestampType
 
-from tecton import transformation
+from tecton import transformation, materialization_context
 
 
 @transformation(mode="pyspark")
@@ -11,17 +11,16 @@ def sliding_window_transformation(
         df,
         timestamp_key: str,
         window_size: str,
-        start_time,
-        context,
         slide_interval: str = None,
         window_column_name="window_end",
+        context=materialization_context()
 ):
     """
         :param df: Spark DataFrame
         :param timestamp_key: The name of the timestamp columns for the event times in `df`
         :param window_size: How long each sliding window is, as a string in the format "[QUANTITY] [UNIT]".
             Ex: "2 days". See https://pypi.org/project/pytimeparse/ for more details.
-        :param context: Tecton materialization context which provides start_time, end_time, and sets default slide_interval
+        :param context:[optional] Tecton materialization context which provides start_time, end_time, and sets default slide_interval
             to the feature view batch_schedule
         :param slide_interval: [optional] How often window is produced, as a string in the format "[QUANTITY] [UNIT]".
             Ex: "2 days". See https://pypi.org/project/pytimeparse/ for more details.

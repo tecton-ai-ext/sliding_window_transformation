@@ -43,6 +43,4 @@ def user_distinct_merchant_transaction_count_30d(transactions_batch, context=mat
         # The slide_interval defaults to the batch_schedule (1 day).
         sliding_window_transformation(transactions_batch,
             timestamp_key=const('timestamp'),
-            window_size=const('30d'),
-            start_time=context.start_time,
-            context=context))
+            window_size=const('30d')))

@@ -13,60 +13,60 @@ To ensure they are backfilled correctly, you could use `tecton_sliding_window` t
 custom aggregations.
 
 ## Example
-Given a series of transactions, we want to calculate a time_window average over 3 days with a `batch_schedule` of 1 day.
+Given a series of transactions, we want a list of merchants over 3 days with a `slide_interval` of 1 day.
 
 | Timestamp  | user_id | merchant_id |
 |------------|---------|-------------|
 | 2021-05-01 | 1       | a           |
-| 2021-05-02 | 1       | a           |
-| 2021-05-03 | 1       | b           |
-| 2021-05-04 | 1       | a           |
+| 2021-05-02 | 1       | b           |
+| 2021-05-03 | 1       | c           |
+| 2021-05-04 | 1       | d           |
 
-After running this data through `tecton_sliding_window` each data point is repeated (`window_size`/`batch_schedule`) times
+After running this data through `tecton_sliding_window` each data point is repeated (`window_size`/`slide_interval`) times
 with each window_end that the data point would be included in.
 
 | Timestamp  |  user_id | merchant_id | window_end |
 |------------|---------|-------------|------------|
 | 2021-05-01 | 1       | a           | 2021-05-01 |
 | 2021-05-01 | 1       | a           | 2021-05-02 |
+| 2021-05-02 | 1       | b           | 2021-05-02 |
 | 2021-05-01 | 1       | a           | 2021-05-03 |
-| 2021-05-02 | 1       | a           | 2021-05-02 |
-| 2021-05-02 | 1       | a           | 2021-05-03 |
-| 2021-05-02 | 1       | a           | 2021-05-04 |
-| 2021-05-03 | 1       | b           | 2021-05-03 |
-| 2021-05-03 | 1       | b           | 2021-05-04 |
-| 2021-05-03 | 1       | b           | 2021-05-05 |
-| 2021-05-04 | 1       | a           | 2021-05-04 |
-| 2021-05-04 | 1       | a           | 2021-05-05 |
-| 2021-05-04 | 1       | a           | 2021-05-06 |
+| 2021-05-02 | 1       | b           | 2021-05-03 |
+| 2021-05-03 | 1       | c           | 2021-05-03 |
+| 2021-05-02 | 1       | b           | 2021-05-04 |
+| 2021-05-03 | 1       | c           | 2021-05-04 |
+| 2021-05-04 | 1       | d           | 2021-05-04 |
+| 2021-05-03 | 1       | c           | 2021-05-05 |
+| 2021-05-04 | 1       | d           | 2021-05-05 |
+| 2021-05-04 | 1       | d           | 2021-05-06 |
 
-The output of tecton_sliding_window can now be grouped by window_end, to get the desired window aggregation. If we want to
-count number of distinct transactions, we can use the transformation below on our `tecton_sliding_window` output:
+The output of tecton_sliding_window can now be grouped by window_end, to get the desired window aggregation. If we want a list
+of merchants from transactions, we can use the transformation below on the output of  `tecton_sliding_window`:
 ```python
 @transformation(mode='spark_sql')
 def user_distinct_merchant_transaction_count_transformation(window_input_df):
     return f'''
         SELECT
             user_id,
-            COUNT(DISTINCT merchant_id) AS distinct_merchant_count,
-            window_end AS timestamp
+            COLLECT_LIST(merchant_id) AS recent_merchants,
+            window_end
         FROM {window_input_df}
         GROUP BY
-            merchant_id,
+            user_id,
             window_end
     '''
 ```
 
 The final output dataframe is:
 
-| timestamp  | distinct_merchant_count | user_id |
+| window_end  | recent_merchants | user_id|
 |------------|-------------------------|---------|
-| 2021-05-01 | 1                       | 1       | 
-| 2021-05-02 | 1                       | 1       |
-| 2021-05-03 | 2                       | 1       |
-| 2021-05-04 | 2                       | 1       |
-| 2021-05-05 | 2                       | 1       |
-| 2021-05-06 | 1                       | 1       |
+| 2021-05-01 | a                       | 1       | 
+| 2021-05-02 | a, b                    | 1       |
+| 2021-05-03 | a, b, c                 | 1       |
+| 2021-05-04 | b, c, d                 | 1       |
+| 2021-05-05 | c, d                    | 1       |
+| 2021-05-06 | d                       | 1       |
 
 
 The feature view definition would be the following:
@@ -104,10 +104,8 @@ The tecton_sliding_window() has 3 primary inputs:
 `window_size`(**str**): How long each sliding window is, as a string in the format "[QUANTITY] [UNIT]".
             Ex: "2 days". See https://pypi.org/project/pytimeparse/ for more details. For example, if the feature is the number of distinct IDs in the last week, then the window size is 7 days.
 
-`context`: Tecton materialization context.
-
 `slide_interval`(**Optional**): How often window is produced, as a string in the format "[QUANTITY] [UNIT]".
-            Ex: "2 days". See https://pypi.org/project/pytimeparse/ for more details.
+            Ex: "2 days".g See https://pypi.org/project/pytimeparse/ for more details.
             Note this must be less than or equal to window_size, and window_size must be a multiple of slide_interval.
             If not provided, this defaults to the batch schedule of the FeatureView.
 
