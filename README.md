@@ -82,6 +82,12 @@ from datetime import timedelta
 from tecton import const
 
 @batch_feature_view(
+    # Use a FilteredSource to efficiently pre-filter the input data before the sliding window explosion. 
+    # This function will filter the data to `[start_time + start_time_offset, end_time)`
+    # where start_time and end_time are for the period being materialized. During a backfill this 
+    # may be multiple months. In steady state, jobs will have a period of a single `batch_schedule`.
+    # To compute a 3-day aggregate, we'll always need the two full days preceeding the start time,
+    # so we use -2 days for the start_time_offset.
     sources=[FilteredSource(transactions_batch, start_time_offset=timedelta(days=-2))],
     entities=[user],
     mode='pipeline',
@@ -94,7 +100,7 @@ from tecton import const
 )
 def user_merchant_list_3d(transactions_batch, context=materialization_context()):
     return user_merchant_list_transformation(
-        # Use tecton_sliding_transformation to create trailing 30 day time windows.
+        # Use tecton_sliding_transformation to create trailing 3 day time windows.
         # The slide_interval defaults to the batch_schedule (1 day).
         sliding_window_transformation(transactions_batch,
             timestamp_key=const('timestamp'),
