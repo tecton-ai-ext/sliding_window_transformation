@@ -1,10 +1,10 @@
 # Sliding Window Transformation
 
-`tecton_sliding_window` is transformation that was built-into older versions of Tecton SDK. It enables running backfills 
+`tecton_sliding_window` is transformation that was built-into older versions of the Tecton SDK. It enabled running backfills 
 of historical data for custom time-windowed aggregations in a single job. This repository contains the equivalent transformation.
 
 >Warning:
->As of 0.4, it is deprecated and no longer managed by Tecton. In newer
+>As of 0.4, `tecton_sliding_window` is deprecated and no longer managed by Tecton. In newer
 versions of the Tecton SDK, you can use [incremental backfills](https://docs.tecton.ai/latest/overviews/framework/feature_views/batch/incremental_backfills.html)
 
 In steady-state, Tecton will schedule a job to materialize data based on `batch_schedule` defined in your feature views. Prior to 0.4, historical
