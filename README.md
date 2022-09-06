@@ -1,6 +1,6 @@
 # Sliding Window Transformation
 
-`tecton_sliding_window` is transformation that was built-into older versions of the Tecton SDK. It enabled running backfills 
+`tecton_sliding_window` is a transformation that was built-into older versions of the Tecton SDK. It enabled running backfills 
 of historical data for custom time-windowed aggregations in a single job. This repository contains the equivalent transformation.
 
 >Warning:
@@ -107,7 +107,7 @@ def user_merchant_list_3d(transactions_batch, context=materialization_context())
             window_size=const('3d')))
 ```
 ## Usage
-The tecton_sliding_window() has 3 primary inputs:
+The sliding_window_transformation() has the following inputs:
 
 `df`: the input Spark dataframe.
 
