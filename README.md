@@ -11,12 +11,12 @@ If you wish to maintain your existing Feature View logic and avoid rematerializa
 
 Follow these steps to migrate a Feature View from `tecton_sliding_window` to `sliding_window_transformation` without rematerializing data:
 
-1.) Upgrade your Feature View to 0.4 (non-compat) definition, but keep the `tecton_sliding_window` from tecton.compat package. Run tecton apply, and you should see your feature views being upgraded in the plan output.
+1.) Upgrade your Feature View to 0.4 (non-compat) definition, but keep the `tecton_sliding_window` from tecton.compat package. Run `tecton apply`, and you should see your feature views being upgraded in the plan output.
 
 2.) Copy the `sliding_window_transformation` transformation from this repo into your feature repo. Replace the `tecton_sliding_window` imported from tecton.compat with the sliding_window_transformation.
 We recommend that you first create a duplicate feature view with this new transformation, materialize a small window of data, and then compare the data to the original feature view to ensure that this change has no impact.
 
-3.) Once you are sure that this change is safe, you can use the [`--suppress-recreates`](https://docs.tecton.ai/latest/examples/cost-management-best-practices.html#suppressing-rematerialization) flag with tecton apply or tecton plan to avoid re-materializing the feature data.
+3.) Once you are sure that this change is safe, you can use the [`--suppress-recreates`](https://docs.tecton.ai/latest/examples/cost-management-best-practices.html#suppressing-rematerialization) flag with `tecton apply` or `tecton plan` to avoid re-materializing the feature data.
 
 Detailed information on sliding_window_transformation can be found below.
 
