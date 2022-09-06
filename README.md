@@ -3,14 +3,22 @@
 `tecton_sliding_window` is a transformation that was built-into older versions of the Tecton SDK. It enabled running backfills 
 of historical data for custom time-windowed aggregations in a single job. This repository contains the equivalent transformation.
 
->Warning:
->As of 0.4, `tecton_sliding_window` is deprecated and no longer managed by Tecton. In newer
-versions of the Tecton SDK, you can use [incremental backfills](https://docs.tecton.ai/latest/overviews/framework/feature_views/batch/incremental_backfills.html)
+As of 0.4, tecton_sliding_window is deprecated and no longer managed by Tecton. In newer
+versions of the Tecton SDK, you can use incremental backfills to create custom sliding window transformations, however this will require rematerializing your features.
 
-In steady-state, Tecton will schedule a job to materialize data based on `batch_schedule` defined in your feature views. Prior to 0.4, historical
-data could only be backfilled multiple `batch_schedule` periods at a time, which would cause issues with custom time-windowed aggregations (e.g. a rolling 30 day aggregation implemented with SQL aggregation). 
-To ensure they are backfilled correctly, you could use `tecton_sliding_window` to duplicate each data point for each window it is included in, and then group by windows to do 
-custom aggregations.
+If you wish to maintain your existing Feature View logic and avoid rematerialization, you can use the
+`sliding_window_transformation` implemented this repo in place of tecton_sliding_window. This transformation must be included in your feature repo and managed by you.
+
+Follow these steps to migrate a Feature View from `tecton_sliding_window` to `sliding_window_transformation` without rematerializing data:
+
+1.) Upgrade your Feature View to 0.4 (non-compat) definition, but keep the `tecton_sliding_window` from tecton.compat package. Run tecton apply, and you should see your feature views being upgraded in the plan output.
+
+2.) Copy the `sliding_window_transformation` transformation from this repo into your feature repo. Replace the `tecton_sliding_window` imported from tecton.compat with the sliding_window_transformation.
+We recommend that you first create a duplicate feature view with this new transformation, materialize a small window of data, and then compare the data to the original feature view to ensure that this change has no impact.
+
+3.) Once you are sure that this change is safe, you can use the [`--suppress-recreates`](https://docs.tecton.ai/latest/examples/cost-management-best-practices.html#suppressing-rematerialization) flag with tecton apply or tecton plan to avoid re-materializing the feature data.
+
+Detailed information on sliding_window_transformation can be found below.
 
 ## Example
 Given a series of transactions, we want a list of merchants visited over the last 3 days with a `slide_interval` of 1 day.
