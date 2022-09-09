@@ -103,7 +103,7 @@ from tecton import const
     batch_schedule=timedelta(days=1),
     online=True,
     offline=True,
-    feature_start_time=datetime(2021, 4, 1),
+    feature_start_time=datetime(2021, 5, 1),
     description='List of merchants user visited in the last 3 days.'
 )
 def user_merchant_list_3d(transactions_batch, context=materialization_context()):
