@@ -18,7 +18,7 @@ Follow these steps to migrate a Feature View from `tecton_sliding_window` to `sl
 2. Copy the `sliding_window_transformation` transformation from this repo into your feature repo. Replace the `tecton_sliding_window` imported from tecton.compat with `sliding_window_transformation`.
    We recommend that you first create a duplicate feature view with this new transformation, materialize a small window of data, and then compare the data to the original feature view to ensure that this change has no impact.
 
-3. You can now safely run `tecton plan` and `tecton apply` with the [`--suppress-recreates`](./cost-management-best-practices.md#suppressing-rematerialization) flag to avoid re-materializing the feature data. When you have removed all usages of `tecton_sliding_window` from your feature views, you will see that the transformation is deleted in the plan output.
+3. You can now safely run `tecton plan` and `tecton apply` with the [`--suppress-recreates`](https://docs.tecton.ai/latest/examples/cost-management-best-practices.html#suppressing-rematerialization) flag to avoid re-materializing the feature data. When you have removed all usages of `tecton_sliding_window` from your feature views, you will see that the transformation is deleted in the plan output.
 
 Detailed information on sliding_window_transformation can be found below.
 
