@@ -10,7 +10,7 @@ partition_columns = [
 transactions_batch = BatchSource(
     name='transactions_batch',
     batch_config=HiveConfig(
-        database='demo_fraud',
+        database='demo_fraud_v2',
         table='transactions',
         timestamp_field='timestamp',
         # Setting the datetime partition columns significantly speeds up queries from Hive tables.
