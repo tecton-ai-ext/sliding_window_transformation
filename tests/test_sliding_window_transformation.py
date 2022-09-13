@@ -1,4 +1,3 @@
-import pytest
 from sliding_window_transformation import sliding_windows
 from user_distinct_merchant_transaction_count_30d import user_distinct_merchant_transaction_count_30d
 from datetime import datetime
