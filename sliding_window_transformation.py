@@ -55,6 +55,68 @@ def _validate_sliding_window_duration(
     return window_size_td, slide_interval_td
 
 
+def _parse_time(duration: str, allow_unbounded: bool):
+    """
+        :param duration: time period string converted to timedelta
+        :param allow_unbouded: Allow unbounded time periods
+
+        Convert string to timedelta.
+    """
+    if allow_unbounded and duration.lower() == WINDOW_UNBOUNDED_PRECEDING:
+        return None
+    return datetime.timedelta(seconds=pytimeparse.parse(duration))
+
+
+
+def _align_time_downwards(time: datetime.datetime, alignment: datetime.timedelta) -> datetime.datetime:
+    """
+        :param time: timestamp
+        :param alignment: How often window is produced
+
+        Align timestamps down so that each window contains equivalent time 
+        period of data
+
+        Ex: If start_time = 3:30:00 pm and alignment is 1h then align down to 3:00:00 pm
+    """
+    excess_seconds = time.timestamp() % alignment.total_seconds()
+    return datetime.datetime.utcfromtimestamp(time.timestamp() - excess_seconds)
+
+
+def sliding_windows(
+    timestamp: datetime.datetime,
+    window_size: str,
+    slide_interval: str,
+    feature_start: datetime.datetime,
+    feature_end: datetime.datetime,
+):
+    """
+        :param timestamp: timestamp being exploded
+        :param window_size: Window size
+        :param slide_interval: How often a window is produced
+        :param feature_start: Start of time window of data being materialized
+        :param feature_end: End of time window of data being materialized
+
+        Explode a single timestamp by the number of windows it will
+        be included aggregated into.
+    """
+    window_size_td = _parse_time(window_size, allow_unbounded=True)
+    slide_interval_td = _parse_time(slide_interval, allow_unbounded=False)
+
+    aligned_feature_start = _align_time_downwards(feature_start, slide_interval_td)
+    earliest_possible_window_start = _align_time_downwards(timestamp, slide_interval_td)
+    window_end_cursor = max(aligned_feature_start, earliest_possible_window_start) + slide_interval_td
+
+    # Create a new window for each 
+    windows = []
+    while window_end_cursor <= feature_end:
+        ts_after_window_start = window_size_td is None or timestamp >= window_end_cursor - window_size_td
+        ts_before_window_end = timestamp < window_end_cursor
+        if ts_after_window_start and ts_before_window_end:
+            windows.append(window_end_cursor - datetime.timedelta(microseconds=1))
+            window_end_cursor = window_end_cursor + slide_interval_td
+        else:
+            break
+    return windows
 
 @transformation(mode="pyspark")
 def sliding_window_transformation(
@@ -83,72 +145,9 @@ def sliding_window_transformation(
     from pyspark.sql import functions as F
     import pytimeparse
 
-
-    def _parse_time(duration: str, allow_unbounded: bool):
-        """
-            :param duration: time period string converted to timedelta
-            :param allow_unbouded: Allow unbounded time periods
-
-            Convert string to timedelta.
-        """
-        if allow_unbounded and duration.lower() == WINDOW_UNBOUNDED_PRECEDING:
-            return None
-        return datetime.timedelta(seconds=pytimeparse.parse(duration))
-
-
-    def _align_time_downwards(time: datetime.datetime, alignment: datetime.timedelta) -> datetime.datetime:
-        """
-            :param time: timestamp
-            :param alignment: How often window is produced
-
-            Align timestamps down so that each window contains equivalent time 
-            period of data
-
-            Ex: If start_time = 3:30:00 pm and alignment is 1h then align down to 3:00:00 pm
-        """
-        excess_seconds = time.timestamp() % alignment.total_seconds()
-        return datetime.datetime.utcfromtimestamp(time.timestamp() - excess_seconds)
-
-
-    @F.udf(ArrayType(TimestampType()))
-    def sliding_window_udf(
-        timestamp: datetime.datetime,
-        window_size: str,
-        slide_interval: str,
-        feature_start: datetime.datetime,
-        feature_end: datetime.datetime,
-    ):
-        """
-            :param timestamp: timestamp being exploded
-            :param window_size: Window size
-            :param slide_interval: How often a window is produced
-            :param feature_start: Start of time window of data being materialized
-            :param feature_end: End of time window of data being materialized
-
-            Explode a single timestamp by the number of windows it will
-            be included aggregated into.
-        """
-        window_size_td = _parse_time(window_size, allow_unbounded=True)
-        slide_interval_td = _parse_time(slide_interval, allow_unbounded=False)
-
-        aligned_feature_start = _align_time_downwards(feature_start, slide_interval_td)
-        earliest_possible_window_start = _align_time_downwards(timestamp, slide_interval_td)
-        window_end_cursor = max(aligned_feature_start, earliest_possible_window_start) + slide_interval_td
-
-        # Create a new window for each 
-        windows = []
-        while window_end_cursor <= feature_end:
-            ts_after_window_start = window_size_td is None or timestamp >= window_end_cursor - window_size_td
-            ts_before_window_end = timestamp < window_end_cursor
-            if ts_after_window_start and ts_before_window_end:
-                windows.append(window_end_cursor - datetime.timedelta(microseconds=1))
-                window_end_cursor = window_end_cursor + slide_interval_td
-            else:
-                break
-        return windows
-
     slide_interval = slide_interval or f"{context.batch_schedule.total_seconds()} seconds"
     _validate_sliding_window_duration(window_size, slide_interval)
+    sliding_window_udf = F.udf(sliding_windows, ArrayType(TimestampType()))
 
     return df.withColumn(
         window_column_name,
