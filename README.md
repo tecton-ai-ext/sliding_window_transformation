@@ -11,6 +11,7 @@ If you wish to maintain your existing Feature View logic and avoid rematerializa
 
 Follow these steps to migrate a Feature View from `tecton_sliding_window` to `sliding_window_transformation` without rematerializing data:
 
+
 1. Upgrade your Feature View to 0.4 (non-compat) definition, but keep the `tecton_sliding_window` from tecton.compat package. Run `tecton apply`, and
    you should see your feature views being upgraded in the plan output.
 
@@ -104,7 +105,7 @@ from tecton import const, batch_feature_view, FilteredSource
     batch_schedule=timedelta(days=1),
     online=True,
     offline=True,
-    feature_start_time=datetime(2021, 4, 1),
+    feature_start_time=datetime(2021, 5, 1),
     description='List of merchants user visited in the last 3 days.'
 )
 def user_merchant_list_3d(transactions_batch):
