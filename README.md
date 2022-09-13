@@ -90,6 +90,7 @@ The feature view definition would be the following:
 ```python
 from datetime import timedelta, datetime
 from tecton import const, batch_feature_view, FilteredSource
+from sliding_window_transformation import sliding_window_transformation
 
 @batch_feature_view(
     # Use a FilteredSource to efficiently pre-filter the input data before the sliding window explosion. 
