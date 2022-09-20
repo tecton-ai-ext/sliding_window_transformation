@@ -11,12 +11,25 @@ If you wish to maintain your existing Feature View logic and avoid rematerializa
 
 Follow these steps to migrate a Feature View from `tecton_sliding_window` to `sliding_window_transformation` without rematerializing data:
 
-1.) Upgrade your Feature View to 0.4 (non-compat) definition, but keep the `tecton_sliding_window` from tecton.compat package. Run `tecton apply`, and you should see your feature views being upgraded in the plan output.
 
-2.) Copy the `sliding_window_transformation` transformation from this repo into your feature repo. Replace the `tecton_sliding_window` imported from tecton.compat with the sliding_window_transformation.
-We recommend that you first create a duplicate feature view with this new transformation, materialize a small window of data, and then compare the data to the original feature view to ensure that this change has no impact.
+1. Upgrade your Feature View to 0.4 (non-compat) definition, but keep the `tecton_sliding_window` from tecton.compat package. Run `tecton apply`, and you should see your feature views being upgraded in the plan output.
 
-3.) Once you are sure that this change is safe, you can use the [`--suppress-recreates`](https://docs.tecton.ai/latest/examples/cost-management-best-practices.html#suppressing-rematerialization) flag with `tecton apply` or `tecton plan` to avoid re-materializing the feature data.
+2. Copy the `sliding_window_transformation` transformation from this repo into your feature repo. Replace the `tecton_sliding_window` imported from tecton.compat with `sliding_window_transformation`. We recommend testing your feature view in a development workspace using Feature View `run()`. You can compare the output features with the old Feature View over the same time period to check the Feature Views
+are equivalent.
+
+```python
+import tecton
+from datetime import datetime
+
+fv = tecton.get_workspace('my_dev_workspace').get_feature_view('fv_with_sliding_window_transformation.')
+
+# Run the feature view over multiple materialization periods. This should produce features for each period in the range.
+df = fv.run(start_time=datetime(2022, 5, 10), end_time=datetime(2022, 5, 13)).to_spark()
+
+df.show()
+```
+
+3. You can now safely run `tecton plan` and `tecton apply` with the [`--suppress-recreates`](https://docs.tecton.ai/latest/examples/cost-management-best-practices.html#suppressing-rematerialization) flag to avoid re-materializing the feature data. When you have removed all usages of `tecton_sliding_window` from your feature views, you will see that the transformation is deleted in the plan output.
 
 Detailed information on sliding_window_transformation can be found below.
 
@@ -86,8 +99,9 @@ The final output dataframe is:
 The feature view definition would be the following:
 
 ```python
-from datetime import timedelta
-from tecton import const
+from datetime import timedelta, datetime
+from tecton import const, batch_feature_view, FilteredSource
+from sliding_window_transformation import sliding_window_transformation
 
 @batch_feature_view(
     # Use a FilteredSource to efficiently pre-filter the input data before the sliding window explosion. 
@@ -106,7 +120,7 @@ from tecton import const
     feature_start_time=datetime(2021, 5, 1),
     description='List of merchants user visited in the last 3 days.'
 )
-def user_merchant_list_3d(transactions_batch, context=materialization_context()):
+def user_merchant_list_3d(transactions_batch):
     return user_merchant_list_transformation(
         # Use tecton_sliding_transformation to create trailing 3 day time windows.
         # The slide_interval defaults to the batch_schedule (1 day).
