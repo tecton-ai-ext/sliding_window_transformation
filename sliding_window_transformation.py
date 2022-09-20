@@ -173,18 +173,23 @@ def sliding_window_transformation(
     context=materialization_context(),
 ):
     """
-    :param df: Spark DataFrame
-    :param timestamp_key: The name of the timestamp columns for the event times in `df`
-    :param window_size: How long each sliding window is, as a string in the format "[QUANTITY] [UNIT]".
-        Ex: "2 days". See https://pypi.org/project/pytimeparse/ for more details.
-    :param slide_interval: [optional] How often window is produced, as a string in the format "[QUANTITY] [UNIT]".
-        Ex: "2 days". See https://pypi.org/project/pytimeparse/ for more details.
-        Note this must be less than or equal to window_size, and window_size must be a multiple of slide_interval.
-        If not provided, this defaults to the batch schedule of the FeatureView.
-    :param window_column_name: [optional] The output column name for the timestamp of the end of each window
-    :return: An exploded Spark DataFrame with an added column according to window_column_name.
 
     Tecton transformation to allow defining custom aggregations.
+
+    Args:
+        df: Spark DataFrame
+        timestamp_key: The name of the timestamp columns for the event times in `df`
+        window_size: How long each sliding window is, as a string in the format "[QUANTITY] [UNIT]".
+            Ex: "2 days". See https://pypi.org/project/pytimeparse/ for more details.
+        slide_interval: [optional] How often window is produced, as a string in the format "[QUANTITY] [UNIT]".
+            Ex: "2 days". See https://pypi.org/project/pytimeparse/ for more details.
+            Note this must be less than or equal to window_size, and window_size must be a multiple of slide_interval.
+            If not provided, this defaults to the batch schedule of the FeatureView.
+        window_column_name: [optional] The output column name for the timestamp of the end of each window
+
+    Returns:
+        An exploded Spark DataFrame with an added column according to window_column_name.
+
     """
 
     from pyspark.sql import functions as F
