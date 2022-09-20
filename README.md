@@ -12,11 +12,22 @@ If you wish to maintain your existing Feature View logic and avoid rematerializa
 Follow these steps to migrate a Feature View from `tecton_sliding_window` to `sliding_window_transformation` without rematerializing data:
 
 
-1. Upgrade your Feature View to 0.4 (non-compat) definition, but keep the `tecton_sliding_window` from tecton.compat package. Run `tecton apply`, and
-   you should see your feature views being upgraded in the plan output.
+1. Upgrade your Feature View to 0.4 (non-compat) definition, but keep the `tecton_sliding_window` from tecton.compat package. Run `tecton apply`, and you should see your feature views being upgraded in the plan output.
 
-2. Copy the `sliding_window_transformation` transformation from this repo into your feature repo. Replace the `tecton_sliding_window` imported from tecton.compat with `sliding_window_transformation`.
-   We recommend that you first create a duplicate feature view with this new transformation, materialize a small window of data, and then compare the data to the original feature view to ensure that this change has no impact.
+2. Copy the `sliding_window_transformation` transformation from this repo into your feature repo. Replace the `tecton_sliding_window` imported from tecton.compat with `sliding_window_transformation`. We recommend testing your feature view in a development workspace using Feature View `run()`. You can compare the output features with the old Feature View over the same time period to check the Feature Views
+are equivalent.
+
+```python
+import tecton
+from datetime import datetime
+
+fv = tecton.get_workspace('my_dev_workspace').get_feature_view('fv_with_sliding_window_transformation.')
+
+# Run the feature view over multiple materialization periods. This should produce features for each period in the range.
+df = fv.run(start_time=datetime(2022, 5, 10), end_time=datetime(2022, 5, 13)).to_spark()
+
+df.show()
+```
 
 3. You can now safely run `tecton plan` and `tecton apply` with the [`--suppress-recreates`](https://docs.tecton.ai/latest/examples/cost-management-best-practices.html#suppressing-rematerialization) flag to avoid re-materializing the feature data. When you have removed all usages of `tecton_sliding_window` from your feature views, you will see that the transformation is deleted in the plan output.
 
